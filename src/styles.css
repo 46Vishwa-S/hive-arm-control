@@ -98,14 +98,20 @@
 @layer base {
   * { border-color: var(--color-border); }
   html, body, #root { height: 100%; }
+  html { color-scheme: light dark; }
+  html.dark { color-scheme: dark; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-display);
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.82 0.17 85 / 0.15), transparent),
-      radial-gradient(ellipse 60% 50% at 100% 100%, oklch(0.75 0.16 200 / 0.08), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in oklab, var(--primary) 18%, transparent), transparent),
+      radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in oklab, var(--accent) 10%, transparent), transparent);
     background-attachment: fixed;
+    transition: background-color 0.4s ease, color 0.3s ease;
+  }
+  body, .theme-surface {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease;
   }
 }
 
