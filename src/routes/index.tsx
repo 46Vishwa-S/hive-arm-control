@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArmScene, type ArmState } from "@/components/ArmScene";
 import { AxisSlider } from "@/components/AxisSlider";
 import { HiveLogo } from "@/components/HiveLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Activity,
   Cpu,
