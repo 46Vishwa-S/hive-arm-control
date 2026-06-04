@@ -38,6 +38,37 @@
 
 :root {
   --radius: 0.5rem;
+  /* Light theme — warm honey on cream */
+  --background: oklch(0.985 0.008 85);
+  --foreground: oklch(0.18 0.02 250);
+  --card: oklch(0.97 0.01 85);
+  --card-foreground: oklch(0.18 0.02 250);
+  --popover: oklch(0.99 0.005 85);
+  --popover-foreground: oklch(0.18 0.02 250);
+  --primary: oklch(0.68 0.18 65);
+  --primary-foreground: oklch(0.99 0.005 85);
+  --secondary: oklch(0.94 0.012 85);
+  --secondary-foreground: oklch(0.2 0.02 250);
+  --muted: oklch(0.94 0.012 85);
+  --muted-foreground: oklch(0.45 0.02 250);
+  --accent: oklch(0.6 0.14 200);
+  --accent-foreground: oklch(0.99 0.005 85);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.85 0.02 85 / 80%);
+  --input: oklch(0.94 0.012 85);
+  --ring: oklch(0.68 0.18 65);
+
+  --honey: oklch(0.68 0.18 65);
+  --honey-glow: oklch(0.78 0.18 75);
+  --cyber: oklch(0.6 0.14 200);
+  --danger: oklch(0.6 0.22 25);
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.dark {
   --background: oklch(0.14 0.015 250);
   --foreground: oklch(0.96 0.01 90);
   --card: oklch(0.18 0.018 250);
@@ -62,27 +93,25 @@
   --honey-glow: oklch(0.88 0.19 90);
   --cyber: oklch(0.75 0.16 200);
   --danger: oklch(0.65 0.24 25);
-
-  --font-display: "Space Grotesk", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.dark {
-  --background: oklch(0.14 0.015 250);
-  --foreground: oklch(0.96 0.01 90);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html, body, #root { height: 100%; }
+  html { color-scheme: light dark; }
+  html.dark { color-scheme: dark; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-display);
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.82 0.17 85 / 0.15), transparent),
-      radial-gradient(ellipse 60% 50% at 100% 100%, oklch(0.75 0.16 200 / 0.08), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in oklab, var(--primary) 18%, transparent), transparent),
+      radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in oklab, var(--accent) 10%, transparent), transparent);
     background-attachment: fixed;
+    transition: background-color 0.4s ease, color 0.3s ease;
+  }
+  body, .theme-surface {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease;
   }
 }
 
