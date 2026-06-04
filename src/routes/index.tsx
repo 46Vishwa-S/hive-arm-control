@@ -143,6 +143,7 @@ function HiveArm() {
           </nav>
           <div className="flex items-center gap-3">
             <StatusBadge conn={conn} />
+            <ThemeToggle />
           </div>
         </div>
       </header>
