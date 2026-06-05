@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArmScene, type ArmState } from "@/components/ArmScene";
 import { AxisSlider } from "@/components/AxisSlider";
 import { HiveLogo } from "@/components/HiveLogo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import {
   Activity,
   Cpu,
@@ -143,7 +143,6 @@ function HiveArm() {
           </nav>
           <div className="flex items-center gap-3">
             <StatusBadge conn={conn} />
-            <ThemeToggle />
           </div>
         </div>
       </header>
