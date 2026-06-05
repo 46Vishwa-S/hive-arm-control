@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
 
 type ConnState = "disconnected" | "connecting" | "connected";
 
-const DEFAULT_WS = "ws://192.168.1.50:81";
+const DEFAULT_WS = "wss://hivearm.noreplyglobalx1.workers.dev/ws?role=browser";
 const PRESETS: Record<string, ArmState> = {
   home:    { base: 0,   shoulder: 0,   elbow: 0,   wrist: 0,   camera: 0,   temperature: 25 },
   pickup:  { base: 45,  shoulder: 60,  elbow: -45, wrist: 30,  camera: 0,   temperature: 32 },
