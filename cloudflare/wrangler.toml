@@ -1,0 +1,21 @@
+name = "hivearm"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Durable Object that holds the live websocket clients (browser + ESP32)
+[[durable_objects.bindings]]
+name = "RELAY"
+class_name = "ArmRelay"
+
+# Required: declare the DO class as new SQLite-backed storage
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ArmRelay"]
+
+# OPTIONAL — serve the built HiveArm site from the same worker.
+# Run `bun run build` in the project root, then copy the static output
+# into ./public before deploying. If you only want the relay, delete this block.
+# [assets]
+# directory = "./public"
+# binding   = "ASSETS"
