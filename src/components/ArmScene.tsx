@@ -111,6 +111,10 @@ export function ArmScene({ state }: Props) {
         obj.position.set(...position);
         obj.rotation.set(...rotation);
         parent.add(obj);
+      },
+      undefined,
+      (err) => {
+        console.error("Error loading OBJ model:", url, err);
       });
     };
 
