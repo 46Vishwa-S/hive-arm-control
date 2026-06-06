@@ -3,11 +3,11 @@ import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-import p1Asset from "@/assets/P1.obj.asset.json";
-import p2Asset from "@/assets/P2.obj.asset.json";
-import p3Asset from "@/assets/P3.obj.asset.json";
-import p4Asset from "@/assets/P4.obj.asset.json";
-import p5Asset from "@/assets/P5.obj.asset.json";
+import p1Url from "@/assets/P1.obj?url";
+import p2Url from "@/assets/P2.obj?url";
+import p3Url from "@/assets/P3.obj?url";
+import p4Url from "@/assets/P4.obj?url";
+import p5Url from "@/assets/P5.obj?url";
 
 export interface ArmState {
   base: number;
@@ -115,11 +115,11 @@ export function ArmScene({ state }: Props) {
     };
 
     const R: [number, number, number] = [-Math.PI / 2, 0, 0];
-    loadPart(p1Asset.url, scene,     [0, 0, 0], R);
-    loadPart(p2Asset.url, jBase,     [0, 0, 0], R);
-    loadPart(p3Asset.url, jShoulder, [0, 0, 0], R);
-    loadPart(p4Asset.url, jElbow,    [0, 0, 0], R);
-    loadPart(p5Asset.url, jCamera,   [0, 0, 0], R);
+    loadPart(p1Url, scene,     [0, 0, 0], R);
+    loadPart(p2Url, jBase,     [0, 0, 0], R);
+    loadPart(p3Url, jShoulder, [0, 0, 0], R);
+    loadPart(p4Url, jElbow,    [0, 0, 0], R);
+    loadPart(p5Url, jCamera,   [0, 0, 0], R);
 
     // Slerp targets
     const tBase = new THREE.Quaternion();
