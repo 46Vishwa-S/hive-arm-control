@@ -3,11 +3,12 @@ import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-import p1Url from "@/assets/P1.obj?url";
-import p2Url from "@/assets/P2.obj?url";
-import p3Url from "@/assets/P3.obj?url";
-import p4Url from "@/assets/P4.obj?url";
-import p5Url from "@/assets/P5.obj?url";
+import p1Url from "@/assets/P1.obj";
+import p2Url from "@/assets/P2.obj";
+import p3Url from "@/assets/P3.obj";
+import p4Url from "@/assets/P4.obj";
+import p5Url from "@/assets/P5.obj";
+
 
 export interface ArmState {
   base: number;
