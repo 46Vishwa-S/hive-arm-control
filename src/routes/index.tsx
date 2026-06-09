@@ -36,7 +36,7 @@ type ConnState = "disconnected" | "connecting" | "connected";
 
 const DEFAULT_WS = "wss://hivearm.noreplyglobalx1.workers.dev/ws?role=browser";
 const PRESETS: Record<string, ArmState> = {
-  home:    { base: 0,   shoulder: 0,   elbow: 0,   wrist: 0,   camera: 0,   temperature: 25 },
+  home:    { base: 0,   shoulder: 5,   elbow: -41, wrist: -4,  camera: 0,   temperature: 25 },
   pickup:  { base: 45,  shoulder: 60,  elbow: -45, wrist: 30,  camera: 0,   temperature: 32 },
   scan:    { base: -30, shoulder: 20,  elbow: -20, wrist: 0,   camera: 45,  temperature: 28 },
   rest:    { base: 0,   shoulder: -10, elbow: 80,  wrist: -20, camera: 0,   temperature: 25 },
@@ -80,6 +80,14 @@ function HiveArm() {
       ws.onopen = () => {
         setConn("connected");
         pushLog("✓ Matrix interlinked. ESP32 online.");
+        // Sync physical arm to current UI state on connect
+        const cur = state;
+        ws.send(`0,${Math.round(cur.base)}`);
+        ws.send(`1,${Math.round(cur.shoulder)}`);
+        ws.send(`2,${Math.round(cur.elbow)}`);
+        ws.send(`3,${Math.round(cur.wrist)}`);
+        ws.send(`4,${Math.round(cur.camera)}`);
+        pushLog("→ synced arm to UI state");
       };
       ws.onmessage = (e) => {
         try {

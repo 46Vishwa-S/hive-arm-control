@@ -135,15 +135,25 @@ export function ArmScene({ state }: Props) {
     const RAD = Math.PI / 180;
     const SPEED = 0.12;
 
+    // ── Calibration offsets ──────────────────────────────────────
+    // These are the servo angles at which the PHYSICAL arm stands
+    // perfectly straight (90° upright). We subtract them so the 3D
+    // model is also straight at these same slider values.
+    const CAL_BASE     =   0;
+    const CAL_SHOULDER =   5;
+    const CAL_ELBOW    = -41;
+    const CAL_WRIST    =  -4;
+    const CAL_CAMERA   =   0;
+
     let frameId = 0;
     const animate = () => {
       frameId = requestAnimationFrame(animate);
       const s = stateRef.current;
-      tBase.setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.base * RAD);
-      tShoulder.setFromAxisAngle(new THREE.Vector3(1, 0, 0), s.shoulder * RAD);
-      tElbow.setFromAxisAngle(new THREE.Vector3(1, 0, 0), s.elbow * RAD);
-      tWrist.setFromAxisAngle(new THREE.Vector3(1, 0, 0), s.wrist * RAD);
-      tCamera.setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.camera * RAD);
+      tBase.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (s.base - CAL_BASE) * RAD);
+      tShoulder.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -(s.shoulder - CAL_SHOULDER) * RAD);
+      tElbow.setFromAxisAngle(new THREE.Vector3(1, 0, 0), (s.elbow - CAL_ELBOW) * RAD);
+      tWrist.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -(s.wrist - CAL_WRIST) * RAD);
+      tCamera.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -(s.camera - CAL_CAMERA) * RAD);
 
       jBase.quaternion.slerp(tBase, SPEED);
       jShoulder.quaternion.slerp(tShoulder, SPEED);
