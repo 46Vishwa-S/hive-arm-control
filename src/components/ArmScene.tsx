@@ -17,6 +17,12 @@ export interface ArmState {
   wrist: number;
   camera: number;
   temperature: number;
+  espTemp?: number;
+  dhtTemp?: number;
+  humidity?: number;
+  distance?: number;
+  obstacle?: boolean;
+  heat?: boolean;
 }
 
 interface Props {
@@ -149,7 +155,7 @@ export function ArmScene({ state }: Props) {
     const animate = () => {
       frameId = requestAnimationFrame(animate);
       const s = stateRef.current;
-      tBase.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (s.base - CAL_BASE) * RAD);
+      tBase.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -(s.base - CAL_BASE) * RAD);
       tShoulder.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -(s.shoulder - CAL_SHOULDER) * RAD);
       tElbow.setFromAxisAngle(new THREE.Vector3(1, 0, 0), (s.elbow - CAL_ELBOW) * RAD);
       tWrist.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -(s.wrist - CAL_WRIST) * RAD);

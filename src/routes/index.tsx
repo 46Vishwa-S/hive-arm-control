@@ -18,6 +18,10 @@ import {
   Power,
   Wifi,
   WifiOff,
+  Droplets,
+  Shield,
+  ShieldAlert,
+  Flame,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -36,10 +40,10 @@ type ConnState = "disconnected" | "connecting" | "connected";
 
 const DEFAULT_WS = "wss://hivearm.noreplyglobalx1.workers.dev/ws?role=browser";
 const PRESETS: Record<string, ArmState> = {
-  home:    { base: 0,   shoulder: 5,   elbow: -41, wrist: -4,  camera: 0,   temperature: 25 },
-  pickup:  { base: 45,  shoulder: 60,  elbow: -45, wrist: 30,  camera: 0,   temperature: 32 },
-  scan:    { base: -30, shoulder: 20,  elbow: -20, wrist: 0,   camera: 45,  temperature: 28 },
-  rest:    { base: 0,   shoulder: -10, elbow: 80,  wrist: -20, camera: 0,   temperature: 25 },
+  home:    { base: 0,   shoulder: 5,   elbow: -41, wrist: -4,  camera: 0,   temperature: 25, obstacle: false, heat: false, distance: -1, dhtTemp: 0, humidity: 0 },
+  pickup:  { base: 45,  shoulder: 60,  elbow: -45, wrist: 30,  camera: 0,   temperature: 32, obstacle: false, heat: false, distance: -1, dhtTemp: 0, humidity: 0 },
+  scan:    { base: -30, shoulder: 20,  elbow: -20, wrist: 0,   camera: 45,  temperature: 28, obstacle: false, heat: false, distance: -1, dhtTemp: 0, humidity: 0 },
+  rest:    { base: 0,   shoulder: -10, elbow: 80,  wrist: -20, camera: 0,   temperature: 25, obstacle: false, heat: false, distance: -1, dhtTemp: 0, humidity: 0 },
 };
 
 function HiveArm() {
@@ -92,7 +96,30 @@ function HiveArm() {
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          setState((p) => ({ ...p, ...data }));
+          
+          // Map espTemp to temperature so that existing components / glow effect continues to work
+          if (typeof data.espTemp === "number") {
+            data.temperature = data.espTemp;
+          }
+          
+          setState((p) => {
+            // Check for state transitions to output warnings in the log
+            if (data.obstacle !== undefined && data.obstacle !== p.obstacle) {
+              if (data.obstacle) {
+                const distStr = typeof data.distance === "number" ? `${data.distance.toFixed(1)}cm` : "proximity threshold";
+                pushLog(`[SAFETY] ⚠️ Obstacle detected at ${distStr} - Shoulder Pitch LOCKED.`);
+              } else {
+                pushLog(`[SAFETY] ✓ Obstacle cleared - Shoulder Pitch unlocked.`);
+              }
+            }
+            if (data.heat !== undefined && data.heat !== p.heat) {
+              if (data.heat) {
+                const dhtStr = typeof data.dhtTemp === "number" ? `${data.dhtTemp.toFixed(1)}°C` : "threshold";
+                pushLog(`[SAFETY] 🔥 Thermal event triggered (${dhtStr}) - Elbow pitch backed away.`);
+              }
+            }
+            return { ...p, ...data };
+          });
         } catch {
           pushLog(`◀ ${e.data}`);
         }
@@ -247,8 +274,9 @@ function HiveArm() {
 
             {/* Sliders */}
             <div className="space-y-3">
+              <SafetyHUD state={state} />
               <AxisSlider label="Base Rotation"   value={state.base}     min={-180} max={180} onChange={(v) => update("base", v)}     icon={<RotateCw className="w-3.5 h-3.5" />} />
-              <AxisSlider label="Shoulder Pitch"  value={state.shoulder} min={-90}  max={90}  onChange={(v) => update("shoulder", v)} icon={<ArrowDownUp className="w-3.5 h-3.5" />} />
+              <AxisSlider label="Shoulder Pitch"  value={state.shoulder} min={-90}  max={90}  onChange={(v) => update("shoulder", v)} icon={<ArrowDownUp className="w-3.5 h-3.5" />} disabled={state.obstacle} disabledLabel="LOCKED - OBSTACLE AVOIDANCE" />
               <AxisSlider label="Elbow Pitch"     value={state.elbow}    min={-135} max={135} onChange={(v) => update("elbow", v)}    icon={<Move3d className="w-3.5 h-3.5" />} />
               <AxisSlider label="Wrist Pitch"     value={state.wrist}    min={-90}  max={90}  onChange={(v) => update("wrist", v)}    icon={<Settings2 className="w-3.5 h-3.5" />} />
               <AxisSlider label="Camera Axis"     value={state.camera}   min={-180} max={180} onChange={(v) => update("camera", v)}   icon={<Camera className="w-3.5 h-3.5" />} />
@@ -328,7 +356,8 @@ function HiveArm() {
             </div>
             <div className="space-y-3">
               <TelemCard icon={<Activity className="w-4 h-4" />} label="Link" value={conn.toUpperCase()} accent={conn === "connected"} />
-              <TelemCard icon={<Thermometer className="w-4 h-4" />} label="Thermal" value={`${state.temperature.toFixed(1)}°C`} accent={state.temperature < 70} />
+              <TelemCard icon={<Thermometer className="w-4 h-4" />} label="ESP32 Internal Temp" value={`${state.temperature.toFixed(1)}°C`} accent={state.temperature < 70} />
+              <TelemCard icon={<Droplets className="w-4 h-4" />} label="DHT Ambient Humidity" value={state.humidity !== undefined && state.humidity > 0 ? `${state.humidity.toFixed(0)}%` : "N/A"} accent />
               <TelemCard icon={<Move3d className="w-4 h-4" />} label="Pose vector" value={`${state.base.toFixed(0)}/${state.shoulder.toFixed(0)}/${state.elbow.toFixed(0)}/${state.wrist.toFixed(0)}/${state.camera.toFixed(0)}`} accent />
             </div>
           </div>
@@ -403,6 +432,109 @@ function TelemCard({ icon, label, value, accent }: { icon: React.ReactNode; labe
       <div className={`font-mono text-lg ${accent ? "text-primary text-glow" : "text-foreground"}`}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function SafetyHUD({ state }: { state: ArmState }) {
+  const isAlert = state.obstacle || state.heat;
+  
+  // Calculate a visual distance percentage for radar (0% = 0cm, 100% = 30cm+)
+  const dist = state.distance !== undefined ? state.distance : -1;
+  const radarPct = dist > 0 ? Math.min((dist / 30) * 100, 100) : 0;
+  
+  return (
+    <div className={`rounded-xl border p-4 backdrop-blur transition-all ${
+      isAlert 
+        ? "border-destructive/40 bg-destructive/5 shadow-[0_0_15px_rgba(239,68,68,0.1)]" 
+        : "border-border/60 bg-card/60"
+    }`}>
+      <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-3">
+        <div className="flex items-center gap-2">
+          {isAlert ? (
+            <ShieldAlert className="w-4 h-4 text-destructive animate-pulse" />
+          ) : (
+            <Shield className="w-4 h-4 text-primary" />
+          )}
+          <span className={`text-xs font-mono font-bold uppercase tracking-[0.2em] ${isAlert ? "text-destructive" : "text-foreground"}`}>
+            Safety Autopilot
+          </span>
+        </div>
+        <div>
+          {state.obstacle && (
+            <span className="inline-flex items-center rounded-full bg-destructive/20 border border-destructive/40 px-2 py-0.5 text-[9px] font-mono font-bold text-destructive uppercase tracking-wide animate-pulse mr-1.5">
+              Obstacle
+            </span>
+          )}
+          {state.heat && (
+            <span className="inline-flex items-center rounded-full bg-destructive/20 border border-destructive/40 px-2 py-0.5 text-[9px] font-mono font-bold text-destructive uppercase tracking-wide animate-pulse">
+              Overheat
+            </span>
+          )}
+          {!isAlert && (
+            <span className="inline-flex items-center rounded-full bg-primary/20 border border-primary/40 px-2 py-0.5 text-[9px] font-mono font-bold text-primary uppercase tracking-wide">
+              Nominal
+            </span>
+          )}
+        </div>
+      </div>
+      
+      {/* Sensor values row */}
+      <div className="grid grid-cols-3 gap-2.5 mb-3 text-center">
+        {/* Radar Distance */}
+        <div className="bg-background/40 border border-border/40 rounded-lg p-2 flex flex-col justify-between h-[64px]">
+          <span className="text-[9px] font-mono uppercase tracking-[0.1em] text-muted-foreground">Radar</span>
+          <span className={`font-mono text-xs font-bold leading-none ${dist > 0 && dist <= 7.5 ? "text-destructive animate-pulse" : "text-primary"}`}>
+            {dist > 0 ? `${dist.toFixed(1)} cm` : "N/A"}
+          </span>
+          <div className="h-1 bg-muted/30 rounded-full overflow-hidden mt-1 mx-1">
+            <div 
+              className={`h-full transition-all duration-300 ${dist > 0 && dist <= 7.5 ? "bg-destructive animate-pulse" : "bg-primary"}`} 
+              style={{ width: `${dist > 0 ? Math.max(radarPct, 5) : 0}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Ambient Temperature */}
+        <div className="bg-background/40 border border-border/40 rounded-lg p-2 flex flex-col justify-between h-[64px]">
+          <span className="text-[9px] font-mono uppercase tracking-[0.1em] text-muted-foreground">Ambient</span>
+          <span className={`font-mono text-xs font-bold leading-none ${state.heat ? "text-destructive" : "text-primary"}`}>
+            {state.dhtTemp !== undefined && state.dhtTemp > 0 ? `${state.dhtTemp.toFixed(1)}°C` : "N/A"}
+          </span>
+          <span className="text-[8px] font-mono text-muted-foreground/60 leading-none">
+            Limit 33.0°C
+          </span>
+        </div>
+
+        {/* Room Humidity */}
+        <div className="bg-background/40 border border-border/40 rounded-lg p-2 flex flex-col justify-between h-[64px]">
+          <span className="text-[9px] font-mono uppercase tracking-[0.1em] text-muted-foreground">Humidity</span>
+          <span className="font-mono text-xs font-bold text-primary leading-none">
+            {state.humidity !== undefined && state.humidity > 0 ? `${state.humidity.toFixed(0)}%` : "N/A"}
+          </span>
+          <span className="text-[8px] font-mono text-muted-foreground/60 leading-none">
+            RH sensor
+          </span>
+        </div>
+      </div>
+
+      {/* Warning descriptions */}
+      {isAlert && (
+        <div className="text-[10px] font-mono text-destructive/95 border-t border-destructive/20 pt-2 space-y-1">
+          {state.obstacle && (
+            <div className="flex items-start gap-1.5 leading-tight">
+              <span className="shrink-0">•</span>
+              <span>Collision alert! Servo 2 backing away. Manual shoulder controls locked.</span>
+            </div>
+          )}
+          {state.heat && (
+            <div className="flex items-start gap-1.5 leading-tight">
+              <span className="shrink-0">•</span>
+              <span>Thermal escape routine active. Servo 3 offset by -15.0° to protect joints.</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
